@@ -1,0 +1,9 @@
+# Starting from base image
+FROM node:alpine
+ #ForPHP: FROM php:apache
+WORKDIR '/app'
+COPY ./package.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "run", "start"]
+

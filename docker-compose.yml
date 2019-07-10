@@ -1,0 +1,78 @@
+version: '3'
+ #Specifies the version of the application currently running.
+
+#services: Speifies the workflow of the application network.
+services:
+
+ #[1]postgres: the first service we intend to run,
+ postgres: 
+  #image: Specifying the specific image we are going to use for this build.
+  image: 'postgres:latest'
+
+ #[2]redis: Following the same image procces to build the redis image serice..
+ redis:
+  image: 'redis:latest'
+ #Service (could use any name you'd like) for nginx folder
+ nginx:
+  #keep always running (this is where traffic is always running on start)
+  restart: always
+  build:
+   dockerfile: Dockerfile.dev
+   context: ./nginx
+  ports:
+    - '3050:80'
+ #[3]server: Following the same image build proccess of postgres and redis service.
+ api:
+  #build: Specifies the build option.
+  build:
+   #dockerfile: Specifies where we want to run the dockerfile from.
+    #NOTE: Notice this doesn't include path attributes below, that's because
+     #it is only specifiying the file type for the running the commands.
+   dockerfile: Dockerfile.dev
+   #context: Where to look for the dockerfile for this specific build.
+    #(inside the sever directory)#
+   context: ./server
+   #volumes: specifies where to contain the volumes for the specific build.
+  volumes:
+   #halt overriding the docker container follow specifc locations
+   # Baiscally "leave them as is"
+   - /app/node_modules
+   #[.server:app]: everything aside from the app directory gets accessed 
+   #(asside from the node_modules folder above will get redirected back
+   # to the ./server path.
+    #Supposidly this will help when any time we make changes inside that server
+    #the changes will be automatically be reflected back inside of our
+    #source code.
+   - ./server:/app
+   #environment: Where to address environment variables (so they're not stored
+   #inside of the image) at runtime.
+  environment:
+   # where we are going to address what is in an array of variables.
+    #MAKE SURE TO LOOK UP DOCUMENTATION UNDER EACH SERVICE NEEDED, THIS CAN BE
+     #POSTGRES DEFAULT STARTING VARIABLES OR REDIS PORT DEFAULTS FOR EXAMPLES.
+   - REDIS_HOST=redis
+   #Default port used for redis servers (on hub.docker).
+   - REDIS_PORT=6379
+   - PGUSER=postgres
+   - PGHOST=postgres
+   - PGDATABASE=postgres
+   - PGPASSWORD=postgres_password
+   - PGPORT=5432
+ client:
+  build:
+   dockerfile: Dockerfile.dev
+   context: ./client
+  volumes:
+   - /app/node_modules
+   - ./client:/app
+ worker:
+  environment:
+   - REDIS_HOST=redis
+   - REDIS_PORT=6379
+  build:
+   dockerfile: Dockerfile.dev
+   context: ./worker
+  volumes:
+   - /app/node_modules
+   - ./worker:/app
+
