@@ -1,0 +1,23 @@
+sudo: required
+services:
+ - docker
+
+before_install:
+ - docker build -t mrginnovations/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+ - docker run mrginnovations/react-test npm test -- --coverage
+
+after_success:
+ docker build -t mrginnovations/multi-client ./client
+ docker build -t mrginnovations/multi-nginx ./nginx
+ docker build -t mrginnovations/multi-server ./server
+ docker build -t mrginnovations/multi-worker ./worker
+# log in to the docker CLI
+- echo "$DOCKER_PASSWORD" | docker login -u "DOCKER_ID" --password-stdin
+ #Grab vars (stdin stands for standard).
+# Now take those images and push them over to docker hub
+ docker push mrginnovations/multi-client
+ docker push mrginnovations/multi-nginx
+ docker push mrginnovations/multi-server
+ docker push mrginnovations/multi-worker
